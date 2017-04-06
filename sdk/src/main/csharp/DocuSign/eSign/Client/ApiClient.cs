@@ -14,12 +14,12 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using System.IO;
-using System.Web;
 using System.Linq;
 using System.Net;
 using System.Text;
 using Newtonsoft.Json;
 using RestSharp;
+using System.Threading.Tasks;
 
 namespace DocuSign.eSign.Client
 {
@@ -135,7 +135,7 @@ namespace DocuSign.eSign.Client
             // add file parameter, if any
             foreach(var param in fileParams)
             {
-                request.AddFile(param.Value.Name, param.Value.Writer, param.Value.FileName, param.Value.ContentType);
+                request.AddFile(param.Value.Name, param.Value.Writer, param.Value.FileName, param.Value.ContentLength, param.Value.ContentType);
             }
 
             if (postBody != null) // http body (model or byte[]) parameter
@@ -182,7 +182,11 @@ namespace DocuSign.eSign.Client
             RestClient.UserAgent = Configuration.UserAgent;
 
             InterceptRequest(request);
-            var response = RestClient.Execute(request);
+
+            var completionSource = new TaskCompletionSource<IRestResponse>();
+            RestClient.ExecuteAsync(request, result => completionSource.SetResult(result));
+            var response = completionSource.Task.Result;
+
             InterceptResponse(request, response);
 
             return (Object) response;
@@ -210,7 +214,11 @@ namespace DocuSign.eSign.Client
                 path, method, queryParams, postBody, headerParams, formParams, fileParams,
                 pathParams, contentType);
             InterceptRequest(request);
-            var response = await RestClient.ExecuteTaskAsync(request);
+
+            var completionSource = new TaskCompletionSource<IRestResponse>();
+            RestClient.ExecuteAsync(request, result => completionSource.SetResult(result));
+            var response = await completionSource.Task;
+
             InterceptResponse(request, response);
             return (Object)response;
         }

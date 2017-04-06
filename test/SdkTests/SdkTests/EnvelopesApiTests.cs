@@ -2,6 +2,8 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using DocuSign.eSign.Model;
 using DocuSign.eSign.Api;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace SdkTests
 {
@@ -41,7 +43,7 @@ namespace SdkTests
                 ViewUrl viewUrl = envelopesApi.CreateConsoleView(TestConfig.AccountId, consoleViewRequest);
 
                 // Start the embedded signing session.
-                System.Diagnostics.Process.Start(viewUrl.Url);
+                Utils.OpenUrl(viewUrl.Url);
             }
             catch (DocuSign.eSign.Client.ApiException apiEx)
             {
@@ -72,7 +74,7 @@ namespace SdkTests
                 ViewUrl viewUrl = envelopesApi.CreateCorrectView(TestConfig.AccountId, TestConfig.EnvelopeId, correctViewRequest);
 
                 // Start the embedded signing session.
-                System.Diagnostics.Process.Start(viewUrl.Url);
+                Utils.OpenUrl(viewUrl.Url);
             }
             catch (DocuSign.eSign.Client.ApiException apiEx)
             {
@@ -204,7 +206,7 @@ namespace SdkTests
                 ViewUrl viewUrl = envelopesApi.CreateSenderView(TestConfig.AccountId, envSummary.EnvelopeId, urlRequest);
 
                 // Start the embedded signing session.
-                System.Diagnostics.Process.Start(viewUrl.Url);
+                Utils.OpenUrl(viewUrl.Url);
             }
             catch (DocuSign.eSign.Client.ApiException apiEx)
             {

@@ -80,7 +80,7 @@ namespace SdkTests
                 Trace.WriteLine("ViewUrl is " + viewUrl);
 
                 /// Start a browser to Sign
-                System.Diagnostics.Process.Start(viewUrl.Url);
+                Utils.OpenUrl(viewUrl.Url);
             }
             catch (DocuSign.eSign.Client.ApiException apiEx)
             {
@@ -281,11 +281,12 @@ namespace SdkTests
 
                 string filePath = Path.GetTempPath() + Path.GetRandomFileName() + ".pdf";
 
-                FileStream fs = new FileStream(filePath, FileMode.Create);
-                docStream.Seek(0, SeekOrigin.Begin);
-                docStream.CopyTo(fs);
-                fs.Close();
-                System.Diagnostics.Process.Start(filePath);
+                using (FileStream fs = new FileStream(filePath, FileMode.Create))
+                {
+                    docStream.Seek(0, SeekOrigin.Begin);
+                    docStream.CopyTo(fs);
+                }
+                Utils.OpenUrl(filePath);
 
             }
 
@@ -328,7 +329,7 @@ namespace SdkTests
                 ViewUrl viewUrl = envelopesApi.CreateConsoleView(TestConfig.AccountId, consoleViewRequest);
 
                 // Start the embedded signing session.
-                System.Diagnostics.Process.Start(viewUrl.Url);
+                Utils.OpenUrl(viewUrl.Url);
             }
             catch (DocuSign.eSign.Client.ApiException apiEx)
             {
@@ -366,7 +367,7 @@ namespace SdkTests
                 ViewUrl viewUrl = envelopesApi.CreateSenderView(TestConfig.AccountId, envSummary.EnvelopeId, urlRequest);
 
                 // Start the embedded signing session.
-                System.Diagnostics.Process.Start(viewUrl.Url);
+                Utils.OpenUrl(viewUrl.Url);
             }
             catch (DocuSign.eSign.Client.ApiException apiEx)
             {

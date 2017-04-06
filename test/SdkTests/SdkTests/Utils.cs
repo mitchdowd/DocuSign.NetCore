@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using DocuSign.eSign.Model;
 using System.IO;
 using DocuSign.eSign.Client;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace SdkTests
 {
@@ -125,6 +127,35 @@ namespace SdkTests
             envDef.Recipients.Signers = new List<Signer>();
             envDef.Recipients.Signers.Add(signer);
             return envDef;
+        }
+
+        internal static void OpenUrl(string url)
+        {
+            try
+            {
+                // Attempt the usual process start way.
+                Process.Start(url);
+            }
+            catch
+            {
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    Process.Start(new ProcessStartInfo("cmd", $"/c start {url.Replace("&", "^&")}") { CreateNoWindow = true });
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    Process.Start("xdg-open", url);
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                {
+                    Process.Start("open", url);
+                }
+                else
+                {
+                    // I don't know...
+                    throw;
+                }
+            }
         }
     }
 }

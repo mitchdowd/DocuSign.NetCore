@@ -312,9 +312,9 @@ namespace DocuSign.eSign.Client
         public static String ToDebugReport()
         {
             String report = "C# SDK (DocuSign.eSign) Debug Report:\n";
-            report += "    OS: " + Environment.OSVersion + "\n";
+            report += "    OS: " + System.Runtime.InteropServices.RuntimeInformation.OSDescription + "\n";
             report += "    .NET Framework Version: " + Assembly
-                     .GetExecutingAssembly()
+                     .GetEntryAssembly()
                      .GetReferencedAssemblies()
                      .Where(x => x.Name == "System.Core").First().Version.ToString()  + "\n";
             report += "    Version of the API: v2\n";
