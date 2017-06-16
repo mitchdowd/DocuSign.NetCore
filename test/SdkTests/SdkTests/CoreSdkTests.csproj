@@ -7,7 +7,6 @@
     <EmbeddedResource Include="**\*.resx" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Remove="OAuthFlowTests.cs" />
     <Compile Remove="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -23,8 +22,10 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Hosting" Version="1.1.2" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="1.1.2" />
     <PackageReference Include="Microsoft.AspNetCore.Owin" Version="1.1.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="1.1.2" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.0.0" />
     <PackageReference Include="MSTest.TestAdapter" Version="1.1.14" />
     <PackageReference Include="MSTest.TestFramework" Version="1.1.14" />

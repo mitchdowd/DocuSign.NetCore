@@ -1,17 +1,16 @@
 ﻿using DocuSign.eSign.Api;
 using DocuSign.eSign.Client;
 using DocuSign.eSign.Model;
-using Microsoft.Owin.Hosting;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
-using Owin;
 using System;
 using System.Diagnostics;
-using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading;
-using System.Web.Http;
 
 namespace SdkTests
 {
@@ -35,11 +34,11 @@ namespace SdkTests
     //  2. Set a Client Secret (client_secret below )
     //  3. Set a Callback Url (redirect_url below)
 
- 
+
 
 
     [TestClass]
-    public class OAuthFlowTests : ApiController
+    public class OAuthFlowTests : Controller
     {
         // rest API location
         public const string BaseUrl = "https://localhost/restapi";
@@ -83,44 +82,47 @@ namespace SdkTests
                                                         client_id,
                                                         redirect_url,
                                                         stateOptional);
-           System.Diagnostics.Process.Start(accountServerAuthUrl);
+           Utils.OpenUrl(accountServerAuthUrl);
 
             WaitForCallbackEvent = new ManualResetEvent(false);
 
             // Launch a self-hosted web server to accepte the redirect_url call
             // after the user finishes authencation.
-            using (WebApp.Start<Startup>("http://localhost:8090"))
-            {
-                Trace.WriteLine("WebServer Running- Waiting for access_token");
+            new WebHostBuilder()
+                .UseKestrel()
+                .UseStartup<Startup>()
+                .Build()
+                .Run();
 
-                // This waits for the redirect_url to be received in the REST controller
-                // (see classes below) and then sleeps a short time to allow the response
-                // to be returned to the web browser before the server session ends.
-                WaitForCallbackEvent.WaitOne(60000, false);
-                Thread.Sleep(1000);
-            }
+            Trace.WriteLine("WebServer Running- Waiting for access_token");
+
+            // This waits for the redirect_url to be received in the REST controller
+            // (see classes below) and then sleeps a short time to allow the response
+            // to be returned to the web browser before the server session ends.
+            WaitForCallbackEvent.WaitOne(60000);
+            Thread.Sleep(1000);
 
             Assert.IsNotNull(AccessCode);
 
             // The Authentication is completed, so now echange a code returned for
             // the access_token and refresh_token
-            var webClient = new WebClient();
+            var webClient = new HttpClient();
 
-            webClient.Headers.Add("Content-Type", "application/x-www-form-urlencoded");
+            webClient.DefaultRequestHeaders.Add("Content-Type", "application/x-www-form-urlencoded");
 
             // Add the Authorization header with client_id and client_secret as base64
             string codeAuth = client_id + ":" + client_secret;
             byte[] codeAuthBytes = Encoding.UTF8.GetBytes(codeAuth);
             string codeAuthBase64 = Convert.ToBase64String(codeAuthBytes);
-            webClient.Headers.Add("Authorization", "Basic " + codeAuthBase64);
+            webClient.DefaultRequestHeaders.Add("Authorization", "Basic " + codeAuthBase64);
 
             // Add the code returned from the Authentication site
             string tokenGrantAndCode = string.Format("grant_type=authorization_code&code={0}", AccessCode);
 
             // Call the token endpoint to exchange the code for an access_token
             string tokenEndpoint = string.Format("https://{0}/oauth/token", AccountServerHost);
-            string tokenResponse = webClient.UploadString(tokenEndpoint, tokenGrantAndCode);
-            TokenResponse tokenObj = JsonConvert.DeserializeObject<TokenResponse>(tokenResponse);
+            var tokenResponse = webClient.PostAsync(tokenEndpoint, new StringContent(tokenGrantAndCode)).Result;
+            TokenResponse tokenObj = JsonConvert.DeserializeObject<TokenResponse>(tokenResponse.Content.ReadAsStringAsync().Result);
 
             Assert.IsNotNull(tokenObj);
             Assert.IsNotNull(tokenObj.access_token);
@@ -140,14 +142,14 @@ namespace SdkTests
             // when the access_token expires (see expires_in). Here we test that the refresh_token can be
             // exchanged for a new access_token
 
-            webClient = new WebClient();
-            webClient.Headers.Add("Authorization", "Basic " + codeAuthBase64);
-            webClient.Headers.Add("Content-Type", "application/x-www-form-urlencoded");
+            webClient = new HttpClient();
+            webClient.DefaultRequestHeaders.Add("Authorization", "Basic " + codeAuthBase64);
+            webClient.DefaultRequestHeaders.Add("Content-Type", "application/x-www-form-urlencoded");
 
             // Add the code returned from the Authentication site
             string refreshGrant = string.Format("grant_type=refresh_token&refresh_token={0}", tokenObj.refresh_token);
-            tokenResponse = webClient.UploadString(tokenEndpoint, refreshGrant);
-            tokenObj = JsonConvert.DeserializeObject<TokenResponse>(tokenResponse);
+            tokenResponse = webClient.PostAsync(tokenEndpoint, new StringContent(refreshGrant)).Result;
+            tokenObj = JsonConvert.DeserializeObject<TokenResponse>(tokenResponse.Content.ReadAsStringAsync().Result);
 
             Assert.IsNotNull(tokenObj);
             Assert.IsNotNull(tokenObj.access_token);
@@ -199,30 +201,22 @@ namespace SdkTests
     // directly into this test.
     public class Startup
     {
-        public void Configuration(IAppBuilder app)
+        public void ConfigureServices(IServiceCollection services)
         {
-            // Configure Web API for self-host. 
-            var config = new HttpConfiguration();
-            config.Routes.MapHttpRoute(
-                name: "DefaultApi",
-                routeTemplate: "myApp/{controller}/{id}",
-                defaults: new { id = RouteParameter.Optional }
-            );
-
-            app.UseWebApi(config);
+            services.AddMvc();
         }
     }
 
     // API Controller and action called via the redirect_url registered for thie client_id
-    public class auth_callbackController : ApiController
+    public class auth_callbackController : Controller
     {
         // GET myapp/auth_callback 
-        public HttpResponseMessage Get()
+        public HttpResponseMessage Get([FromQuery] string code, [FromQuery] string state)
         {
-            OAuthFlowTests.AccessCode = Request.RequestUri.ParseQueryString()["code"];
+            OAuthFlowTests.AccessCode = code;
 
             // state is app-specific string that may be ppassed around.
-            OAuthFlowTests.StateValue = Request.RequestUri.ParseQueryString()["state"];
+            OAuthFlowTests.StateValue = state;
 
             HttpResponseMessage response = new HttpResponseMessage();
             response.Content = new StringContent("Redirect Completed");
