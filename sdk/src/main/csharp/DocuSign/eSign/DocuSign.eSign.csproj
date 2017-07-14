@@ -1,6 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>netstandard1.6;net46</TargetFrameworks>
+    <Authors>Mitchell Dowd / DocuSign</Authors>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <PackageLicenseUrl>https://raw.githubusercontent.com/docusign/docusign-csharp-client/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/mitchdowd/DocuSign.NetCore</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/mitchdowd/DocuSign.NetCore.git</RepositoryUrl>
+    <RepositoryType>GIT</RepositoryType>
+    <Product>DocuSign.NetCore</Product>
+    <Company>Mitchell Dowd</Company>
+    <PackageId>DocuSign.NetCore</PackageId>
+    <Description>An UNOFFICIAL port of the DocuSign C# Client to .NET Core.  If not using .NET Core, please use the DocuSign.eSign package.</Description>
+    <PackageTags>docusign dotnet dotnetcore core esign</PackageTags>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
