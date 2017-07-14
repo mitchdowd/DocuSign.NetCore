@@ -135,7 +135,11 @@ namespace DocuSign.eSign.Client
             // add file parameter, if any
             foreach(var param in fileParams)
             {
+#if NETSTANDARD1_6
                 request.AddFile(param.Value.Name, param.Value.Writer, param.Value.FileName, param.Value.ContentLength, param.Value.ContentType);
+#else
+                request.AddFile(param.Value.Name, param.Value.Writer, param.Value.FileName);
+#endif
             }
 
             if (postBody != null) // http body (model or byte[]) parameter
