@@ -14,12 +14,12 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using System.IO;
-using System.Web;
 using System.Linq;
-using System.Net;
+using System.Net.Http;
 using System.Text;
 using Newtonsoft.Json;
 using RestSharp;
+using System.Threading.Tasks;
 
 namespace DocuSign.eSign.Client
 {
@@ -135,7 +135,11 @@ namespace DocuSign.eSign.Client
             // add file parameter, if any
             foreach(var param in fileParams)
             {
-                request.AddFile(param.Value.Name, param.Value.Writer, param.Value.FileName, param.Value.ContentType);
+#if NETSTANDARD1_6
+                request.AddFile(param.Value.Name, param.Value.Writer, param.Value.FileName, param.Value.ContentLength, param.Value.ContentType);
+#else
+                request.AddFile(param.Value.Name, param.Value.Writer, param.Value.FileName);
+#endif
             }
 
             if (postBody != null) // http body (model or byte[]) parameter
@@ -182,7 +186,11 @@ namespace DocuSign.eSign.Client
             RestClient.UserAgent = Configuration.UserAgent;
 
             InterceptRequest(request);
-            var response = RestClient.Execute(request);
+
+            var completionSource = new TaskCompletionSource<IRestResponse>();
+            RestClient.ExecuteAsync(request, result => completionSource.SetResult(result));
+            var response = completionSource.Task.Result;
+
             InterceptResponse(request, response);
 
             return (Object) response;
@@ -210,7 +218,11 @@ namespace DocuSign.eSign.Client
                 path, method, queryParams, postBody, headerParams, formParams, fileParams,
                 pathParams, contentType);
             InterceptRequest(request);
-            var response = await RestClient.ExecuteTaskAsync(request);
+
+            var completionSource = new TaskCompletionSource<IRestResponse>();
+            RestClient.ExecuteAsync(request, result => completionSource.SetResult(result));
+            var response = await completionSource.Task;
+
             InterceptResponse(request, response);
             return (Object)response;
         }
@@ -520,15 +532,15 @@ namespace DocuSign.eSign.Client
         {
             // The Authentication is completed, so now echange a code returned for
             // the access_token and refresh_token.
-            var webClient = new WebClient();
+            var webClient = new HttpClient();
 
-            webClient.Headers.Add("Content-Type", "application/x-www-form-urlencoded");
+            webClient.DefaultRequestHeaders.Add("Content-Type", "application/x-www-form-urlencoded");
 
             // Add the Authorization header with client_id and client_secret as base64
             string codeAuth = clientId + ":" + clientSecret;
             byte[] codeAuthBytes = Encoding.UTF8.GetBytes(codeAuth);
             string codeAuthBase64 = Convert.ToBase64String(codeAuthBytes);
-            webClient.Headers.Add("Authorization", "Basic " + codeAuthBase64);
+            webClient.DefaultRequestHeaders.Add("Authorization", "Basic " + codeAuthBase64);
 
             // Add the code returned from the authentication site
             string tokenGrantAndCode = string.Format("grant_type=authorization_code&code={0}", accessCode);
@@ -536,8 +548,8 @@ namespace DocuSign.eSign.Client
             // Call the token endpoint to exchange the code for an access_token
             string DocuSignOAuthHost = isSandbox ? "account-d.docusign.com" : "account.docusign.com";
             string tokenEndpoint = string.Format("https://{0}/oauth/token", DocuSignOAuthHost);
-            string tokenResponse = webClient.UploadString(tokenEndpoint, tokenGrantAndCode);
-            TokenResponse tokenObj = JsonConvert.DeserializeObject<TokenResponse>(tokenResponse);
+            var tokenResponse = webClient.PostAsync(tokenEndpoint, new StringContent(tokenGrantAndCode)).Result;
+            TokenResponse tokenObj = JsonConvert.DeserializeObject<TokenResponse>(tokenResponse.Content.ReadAsStringAsync().Result);
 
             // Add the token to this ApiClient
             string authHeader = "Bearer " + tokenObj.access_token;
