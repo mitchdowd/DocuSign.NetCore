@@ -10,8 +10,9 @@
     <Product>DocuSign.NetCore</Product>
     <Company>Mitchell Dowd</Company>
     <PackageId>DocuSign.NetCore</PackageId>
-    <Description>An UNOFFICIAL port of the DocuSign C# Client to .NET Core.  If not using .NET Core, please use the DocuSign.eSign package.</Description>
+    <Description>An UNOFFICIAL port of the DocuSign C# Client to .NET Core.  If not using .NET Core, it is recommended to use the original DocuSign.eSign package.</Description>
     <PackageTags>docusign dotnet dotnetcore core esign</PackageTags>
+    <Version>1.1.0-beta1</Version>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
