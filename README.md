@@ -1,3 +1,7 @@
+_**Notice**: As the official DocuSign C# client now supports .NET Core, this package is no longer maintained. It
+is recommended that you use the official [DocuSign C# API](https://github.com/docusign/docusign-csharp-client)
+instead._
+
 # DocuSign .NET Core Client
 
 This is an exploratory implementation of the DocuSign API within a .NET Core compatible C# implementation.
